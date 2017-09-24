@@ -8,6 +8,8 @@ export var request = (function() {
             var action = '/module/tesla/apartments';
             var method = 'GET';
 
+            window.result;
+
             $.ajax({
                 url: action,
                 type: method,
@@ -18,8 +20,7 @@ export var request = (function() {
 
                 success: function(data) {
                     var response = $.parseJSON(data);
-                    this.getInfo = response;
-                    console.log(this.getInfo);
+                    window.result = response;
                 },
 
                 error: function(e) {
@@ -27,6 +28,7 @@ export var request = (function() {
                 }
 
             });
+
         }
     }
 
