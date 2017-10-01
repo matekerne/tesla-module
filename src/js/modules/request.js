@@ -1,36 +1,40 @@
-export var request = (function() {
+(function(window) {
 
-    return {
-        getApartments: function (floor) {
-            var floor;
-            var condition = "operator=WHERE &field=a.floor&symbol==&floor=";
-            var data = condition + floor;
-            var action = '/module/tesla/apartments';
-            var method = 'GET';
+    var Req = window.Req || {};
 
-            window.result;
+    function GetApartments(floor) {
+        var condition = "operator=WHERE &field=a.floor&symbol==&floor=";
+        var data = condition + floor;
+        var action = '/module/tesla/apartments';
+        var method = 'GET';
 
-            $.ajax({
-                url: action,
-                type: method,
-                data: data,
-                contentType: false,
-                cache: false,
-                processData: false,
+        var floorInfoText = $('.floor__number .number-text');
+        var floorNumber = $('.select-floor').find('.flat-table-item:first').text();
+        floorNumber = floorNumber.replace(/\D/g, '');
+        floorInfoText.text(floor);
 
-                success: function(data) {
-                    var response = $.parseJSON(data);
-                    window.result = response;
-                },
+        $.ajax({
+            url: action,
+            type: method,
+            data: data,
+            contentType: false,
+            cache: false,
+            processData: false,
 
-                error: function(e) {
+            success: function(data) {
 
-                }
+                Apartment.InitApartment(data);
+                Apartment.Event(data);
+                Topbar.init();
+            },
 
-            });
+            error: function(e) {
 
-        }
+            }
+
+        });
     }
 
-
-})();
+    Req.GetApartments = GetApartments;
+    window.Req = Req;
+})(window);
