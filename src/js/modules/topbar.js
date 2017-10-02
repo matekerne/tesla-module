@@ -2,7 +2,7 @@
 
     var Topbar = window.Topbar || {};
 
-    function init() {
+    function CheckFloor(floor) {
         var floor = $('.floor__number .number-text').text();
 
         if (floor === '2') {
@@ -15,34 +15,27 @@
             $('.floor-arrow-up').addClass('active');
             $('.floor-arrow-down').addClass('active');
         }
+    }
 
+    (function Event(){
         // Переключение этажей на стрелках
         $('.floor-arrow-down').on('click', function(e) {
             e.preventDefault();
-            nextFloor();
+            $('.flat-table-row.select-floor').next('.flat-table-row').addClass('select-floor').prev('.flat-table-row').removeClass('select-floor');
+            var floor = $('.select-floor').children('.floor').text();
+            Apartment.LoadFloor(floor);
         });
 
         $('.floor-arrow-up').on('click', function(e) {
             e.preventDefault();
-            prevFloor();
-        });
-
-        function nextFloor() {
-            $('.flat-table-row.select-floor').removeClass('select-floor').next('.flat-table-row').addClass('select-floor');
-            var floor = $('.select-floor').children('.floor').text();
-            console.log(floor);
-            //Req.GetApartments(floor);
-        }
-
-        function prevFloor(e) {
             $('.flat-table-row.select-floor').prev('.flat-table-row').addClass('select-floor').next('.flat-table-row').removeClass('select-floor');
             var floor = $('.select-floor').children('.floor').text();
-            console.log(floor);
-            //Req.GetApartments(floor);
-        }
+            Apartment.LoadFloor(floor);
+        });
         // Переключение этажей на стрелках
-    }
+    })();
 
-    Topbar.init = init;
+
+    Topbar.CheckFloor = CheckFloor;
     window.Topbar = Topbar;
 })(window);

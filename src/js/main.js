@@ -3,6 +3,8 @@ import './modules/topbar';
 import './modules/sidebar';
 import './modules/request';
 import './modules/apartment';
+import './modules/reserve';
+import './modules/form';
 import './modules/svg';
 
 (function (window) {
@@ -10,10 +12,9 @@ import './modules/svg';
 
     function init() {
         Navigation.init();
-        Topbar.init();
+        //Topbar.init();
         Sidebar.init();
         Apartment.LoadFloor(2);
-        Req.GetApartments(2);
     }
 
     App.init = init;

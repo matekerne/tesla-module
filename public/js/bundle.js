@@ -79,8 +79,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__modules_request___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3__modules_request__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__modules_apartment__ = __webpack_require__(5);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__modules_apartment___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4__modules_apartment__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__modules_svg__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__modules_svg___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5__modules_svg__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__modules_reserve__ = __webpack_require__(6);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__modules_reserve___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5__modules_reserve__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__modules_form__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__modules_form___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6__modules_form__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__modules_svg__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__modules_svg___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_7__modules_svg__);
+
+
 
 
 
@@ -93,10 +99,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
     function init() {
         Navigation.init();
-        Topbar.init();
+        //Topbar.init();
         Sidebar.init();
         Apartment.LoadFloor(2);
-        Req.GetApartments(2);
     }
 
     App.init = init;
@@ -140,6 +145,68 @@ App.init();
         // Навигация
     }
 
+    (function() {
+        $(document).on('submit', '#actual-info', function(e) {
+            e.preventDefault();
+
+            var form = $(this);
+            var action = form.attr('action');
+            var method = form.attr('method');
+
+            $('loader').addClass('loading');
+            $('#boxApartments').addClass('filter-blur');
+
+            var floor = $('.select-floor').find('.floor').text();
+
+            $.ajax({
+                url: action,
+                type: method,
+                contentType: false,
+                cache: false,
+                proccessData: false,
+
+                success: function(data) {
+                    var response = $.parseJSON(data);
+                    if (response['status'] == 'success') {
+                        if(window.location.toString().indexOf('module/tesla/home')>0) {
+                            Sidebar.UpdateSidebar();
+                            Apartment.LoadFloor(floor);
+                        }
+                        $('.circle-loader').toggleClass('load-complete');
+                        $('.checkmark').toggle();
+                        $('loader').find('.success-msg').show();
+                        $('loader').find('.success-msg').text(response['message']);
+                        setTimeout(function() {
+                            $('loader').removeClass('loading');
+                            $('.circle-loader').toggleClass('load-complete');
+                            $('.checkmark').toggle();
+                            $('loader').find('.success-msg').hide();
+                            $('loader').find('.success-msg').text();
+                            $('#boxApartments').removeClass('filter-blur');
+                        }, 800);
+                    } else if (response['status'] == 'fail') {
+                        $('.circle-loader').toggleClass('load-complete');
+                        $('.checkmark').toggle();
+                        $('loader').find('.error-msg').show();
+                        $('loader').find('.error-msg').text(response['message']);
+                        setTimeout(function() {
+                            $('loader').removeClass('loading');
+                            $('.circle-loader').toggleClass('load-complete failed');
+                            $('.checkmark').toggle();
+                            $('loader').find('.error-msg').hide();
+                            $('loader').find('.error-msg').text();
+                            $('#boxApartments').removeClass('filter-blur');
+                        }, 800);
+                    }
+                },
+
+                error: function(e) {
+
+                }
+            });
+        });
+    })();
+
     Navigation.init = init;
     window.Navigation = Navigation;
 })(window);
@@ -152,7 +219,7 @@ App.init();
 
     var Topbar = window.Topbar || {};
 
-    function init() {
+    function CheckFloor(floor) {
         var floor = $('.floor__number .number-text').text();
 
         if (floor === '2') {
@@ -165,35 +232,30 @@ App.init();
             $('.floor-arrow-up').addClass('active');
             $('.floor-arrow-down').addClass('active');
         }
+    }
 
+    (function Event(){
         // Переключение этажей на стрелках
         $('.floor-arrow-down').on('click', function(e) {
             e.preventDefault();
-            nextFloor();
+            $('.flat-table-row.select-floor').next('.flat-table-row').addClass('select-floor').prev('.flat-table-row').removeClass('select-floor');
+            var floor = $('.select-floor').children('.floor').text();
+            Apartment.LoadFloor(floor);
+            //Req.GetApartments(floor);
         });
 
         $('.floor-arrow-up').on('click', function(e) {
             e.preventDefault();
-            prevFloor();
-        });
-
-        function nextFloor() {
-            $('.flat-table-row.select-floor').removeClass('select-floor').next('.flat-table-row').addClass('select-floor');
-            var floor = $('.select-floor').children('.floor').text();
-            console.log(floor);
-            //Req.GetApartments(floor);
-        }
-
-        function prevFloor(e) {
             $('.flat-table-row.select-floor').prev('.flat-table-row').addClass('select-floor').next('.flat-table-row').removeClass('select-floor');
             var floor = $('.select-floor').children('.floor').text();
-            console.log(floor);
+            Apartment.LoadFloor(floor);
             //Req.GetApartments(floor);
-        }
+        });
         // Переключение этажей на стрелках
-    }
+    })();
 
-    Topbar.init = init;
+
+    Topbar.CheckFloor = CheckFloor;
     window.Topbar = Topbar;
 })(window);
 
@@ -209,28 +271,101 @@ App.init();
 
         $('.flat-table-row:first').addClass('select-floor');
 
-        $('.flat-table-row').on('click', function() {
+        $('body').on('click', '.flat-table-row', function() {
             $('.flat-table-row').removeClass('select-floor');
             $(this).addClass('select-floor');
 
             var floor = $(this).find('.floor').text();
 
-            /*if (floor == 2) {
-                $('.floor-arrow-up').removeClass('active');
-                $('.floor-arrow-down').addClass('active');
-            } else if (floor == 16) {
-                $('.floor-arrow-down').removeClass('active');
-                $('.floor-arrow-up').addClass('active');
-            } else {
-                $('.floor-arrow-up').addClass('active');
-                $('.floor-arrow-down').addClass('active');
-            }*/
-
-            Req.GetApartments(floor);
+            Apartment.LoadFloor(floor);
         });
     }
 
+    function SelectFlat() {
+        if ($('.flat-item[data-flat=1]').hasClass('select')) {
+            $('.view-apartment[data-type="студия"]').addClass('active-item');
+        }
+
+        if ($('.flat-item[data-flat=4]').hasClass('select')) {
+            $('.view-apartment[data-type="евро 2-х комнатная"]').addClass('active-item');
+        }
+
+        if ($('.flat-item[data-flat=2]').hasClass('select')) {
+            $('.view-apartment[data-type="2-х комнатная"]').addClass('active-item');
+        }
+
+        if ($('.flat-item[data-flat=3]').hasClass('select')) {
+            $('.view-apartment[data-type="3-х комнатная"]').addClass('active-item');
+        }
+    }
+
+    function UpdateSidebar() {
+        var floor = $('.select-floor').find('.floor').text();
+        var studio = $('.flat-item[data-flat=1]');
+        var euro2x = $('.flat-item[data-flat=4]');
+        var flat2x = $('.flat-item[data-flat=2]');
+        var flat3x = $('.flat-item[data-flat=3]');
+        $('#sidebarCount').load('/../module/tesla/home .flat__body, .flat-table', function () {
+            $('.flat-table-row:nth-child(' + floor + ')').addClass('select-floor');
+            if (studio.hasClass('select')) {
+                $('.flat-item[data-flat=1]').addClass('select');
+                $('.flat-table-item[data-flat=1]').addClass('select-flat');
+            }
+
+            if (euro2x.hasClass('select')) {
+                $('.flat-item[data-flat=4]').addClass('select');
+                $('.flat-table-item[data-flat=4]').addClass('select-flat');
+            }
+
+            if (flat2x.hasClass('select')) {
+                $('.flat-item[data-flat=2]').addClass('select');
+                $('.flat-table-item[data-flat=2]').addClass('select-flat');
+            }
+
+            if (flat3x.hasClass('select')) {
+                $('.flat-item[data-flat=3]').addClass('select');
+                $('.flat-table-item[data-flat=3]').addClass('select-flat');
+            }
+
+        });
+    }
+
+    (function () {
+        $('body').on('click', '.flat-item', function() {
+            var selectFlat = $(this).data("flat");
+
+            switch (selectFlat) {
+                case 1:
+                    selectedFlat = "студия";
+                    break;
+                case 2:
+                    selectedFlat = "2-х комнатная";
+                    break;
+                case 3:
+                    selectedFlat = "3-х комнатная";
+                    break;
+                case 4:
+                    selectedFlat = "евро 2-х комнатная";
+                    break;
+            }
+
+            if ($(this).hasClass('select')) {
+                $(this).removeClass('select');
+                $('.view-apartment[data-type="' + selectedFlat + '"]').removeClass('active-item');
+                $('.flat-table-item[data-flat="' + selectFlat + '"]').removeClass('select-flat');
+            } else {
+                $(this).addClass('select');
+                $('.view-apartment[data-type="' + selectedFlat + '"]').addClass('active-item');
+                $('.flat-table-item[data-flat="' + selectFlat + '"]').addClass('select-flat');
+            }
+
+        });
+
+    })();
+
     Sidebar.init = init;
+    Sidebar.UpdateSidebar = UpdateSidebar;
+    Sidebar.SelectFlat = SelectFlat;
     window.Sidebar = Sidebar;
 })(window);
 
@@ -264,8 +399,9 @@ App.init();
             success: function(data) {
 
                 Apartment.InitApartment(data);
+                Sidebar.SelectFlat();
                 Apartment.Event(data);
-                Topbar.init();
+                Topbar.CheckFloor(floor);
             },
 
             error: function(e) {
@@ -306,23 +442,28 @@ App.init();
     function LoadFloor(floor) {
         if (floor >= 12) {
             $('body').addClass('floor-12');
-            whatFloor = '12';
+            var whatFloor = '12';
             $.ajax({
                 url: "/public/svg/apartments" + whatFloor + ".html",
                 success: function(data) {
                     $("#apartmentsLayout").html(data);
+                    //Req.GetApartments(floor);
                 }
             });
         } else {
             $('body').removeClass('floor-12');
-            whatFloor = '2';
+            var whatFloor = '2';
             $.ajax({
                 url: "/public/svg/apartments" + whatFloor + ".html",
                 success: function(data) {
                     $("#apartmentsLayout").html(data);
+
                 }
             });
         }
+
+        Req.GetApartments(floor);
+        $("#floorInfo #floorMapSchema .floor-schema").attr("src", "/../../public/image/flats/floor/walls" + whatFloor + ".png");
     }
 
     function Event(data) {
@@ -344,6 +485,13 @@ App.init();
 
             $('.view-apartment').removeClass('select-apartment');
             $(this).addClass('select-apartment');
+
+            Reserve.ReserveFlat(status, flatId);
+
+            if ($('.buy-panel form div').hasClass('error')) {
+                $('.buy-panel form div').removeClass('error');
+                $('.buy-panel form div .error-message').remove();
+            }
 
             switch (flatStatus) {
                 case '3':
@@ -384,6 +532,14 @@ App.init();
 
     }
 
+    (function () {
+        // Появление названий улиц
+        setTimeout(function() {
+            $('.name-street').addClass('show-street');
+        }, 500);
+        // Появление названий улиц
+    })();
+
     Apartment.InitApartment = InitApartment;
     Apartment.LoadFloor = LoadFloor;
     Apartment.Event = Event;
@@ -392,6 +548,307 @@ App.init();
 
 /***/ }),
 /* 6 */
+/***/ (function(module, exports) {
+
+(function(window) {
+
+    var Reserve = window.Reserve || {};
+
+    function ReserveFlat(status, flatId) {
+
+        if (status == '2') {
+            var reservator = $('#reservator').text();
+            var userRole = $('#role').text();
+
+            var method = 'GET';
+            var action = '/module/tesla/buyer/show';
+            var data =  "apartment_id=" + parseInt(flatId);
+
+            $.ajax({
+                type: method,
+                url: action,
+                data: data,
+
+                success: function(data) {
+                    var response = $.parseJSON(data);
+                    var buyerId;
+
+                    if ((response['status'] == 'success') && (userRole == 3)) {
+                        var buyerId = response[0].id;
+                        $('body').addClass('get-buy-panel');
+                        $('.button-reserve.remove-reserve').removeAttr('disabled');
+                        $('input[name="buyer_id"]').val('' + buyerId + '');
+                        $('input[name="name"]').val('' + response[0].name + '');
+                        $('input[name="surname"]').val('' + response[0].surname + '');
+                        $('input[name="phone"]').val('' + response[0].phone + '');
+                        $('input[name="email"]').val('' + response[0].email + '');
+                    } else if ((response['status'] == 'success') && (userRole == 4)) {
+
+                        if ((response['status'] == 'success') && (reservator == response[0].reservator_id)) {
+                            var buyerId = response[0].id;
+                            $('body').addClass('get-buy-panel');
+                            $('.button-reserve.remove-reserve').removeAttr('disabled');
+                            $('input[name="buyer_id"]').val('' + buyerId + '');
+                            $('input[name="name"]').val('' + response[0].name + '');
+                            $('input[name="surname"]').val('' + response[0].surname + '');
+                            $('input[name="phone"]').val('' + response[0].phone + '');
+                            $('input[name="email"]').val('' + response[0].email + '');
+                        }
+
+                    } else if ((response['status'] == 'fail_amo') && (userRole == 3)) {
+
+                        $('body').removeClass('get-buy-panel');
+                        $('.button-reserve.remove-reserve').attr('disabled', 'disabled');
+                        document.getElementById('reserve-lead').reset();
+                        $('input[name="buyer_id"]').val('');
+
+                        $('loader').addClass('active loading');
+                        $('.circle-loader').toggleClass('load-complete failed');
+                        $('#boxApartments').addClass('filter-blur');
+
+
+
+                        var statusBlock = document.querySelector('.status-block');
+                        var errorMsg = document.createElement('div');
+                        errorMsg.className = 'error-message';
+                        errorMsg.innerHTML = response['message'];
+
+                        $('.checkmark').toggle();
+                        statusBlock.appendChild(errorMsg);
+
+
+                    } else if ((response['status'] == 'fail')) {
+                        $('body').removeClass('get-buy-panel');
+                        $('.button-reserve.remove-reserve').attr('disabled', 'disabled');
+                        document.getElementById('reserve-lead').reset();
+                        $('input[name="buyer_id"]').val('');
+                    }
+                },
+
+                error: function(e) {
+
+                }
+            });
+
+            $('#floorInfo').removeClass('get-flat-info');
+
+            setTimeout( function() {
+                $('#floorInfo').removeClass('get-flat-display');
+            }, 150);
+
+        } else if (status == '3') {
+            $('body').removeClass('get-buy-panel');
+            document.getElementById('reserve-lead').reset();
+            $('input[name="buyer_id"]').val('');
+            $('#floorInfo').removeClass('get-flat-info');
+
+            setTimeout( function() {
+                $('#floorInfo').removeClass('get-flat-display');
+            }, 150);
+        } else {
+
+            document.getElementById('reserve-lead').reset();
+            $('.button-reserve').removeAttr('disabled');
+            $('input[name="buyer_id"]').val('');
+
+            $('#floorInfo').addClass('get-flat-display');
+
+            setTimeout( function() {
+                $('#floorInfo').addClass('get-flat-info');
+            } , 100);
+        }
+    }
+
+    (function(){
+        // Вызов панели
+        $('.btn-buy').on('click', function() {
+            $('body').addClass('get-buy-panel');
+        });
+        // Вызов панели
+
+        // Закрытие панели
+        $('.close-panel').on('click', function() {
+            $('body').removeClass('get-buy-panel');
+        });
+        // Закрытие панели
+
+        // Бронь в AmoCRM
+        $('loader').on('click', function() {
+            $('loader').removeClass('active loading');
+            $('.circle-loader').toggleClass('load-complete failed');
+            $('.checkmark').toggle();
+            var errorMsg = document.querySelector('.error-message');
+
+            if (errorMsg.length) {
+                errorMsg.parentNode.removeChild(errorMsg);
+            }
+
+            $('#boxApartments').removeClass('filter-blur');
+        });
+        // Бронь в AmoCRM
+    })();
+
+    Reserve.ReserveFlat = ReserveFlat;
+    window.Reserve = Reserve;
+})(window);
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
+
+(function(window) {
+
+    var FormPanel = window.FormPanel || {};
+
+    function Validate(form) {
+        var elems = form.elements;
+
+        resetError(elems.name.parentNode);
+        if (!elems.name.value) {
+            showError(elems.name.parentNode, ' Укажите ваше имя.');
+        };
+
+        resetError(elems.surname.parentNode);
+        if (!elems.surname.value) {
+            showError(elems.surname.parentNode, ' Укажите вашу фамилию.');
+        };
+
+        resetError(elems.email.parentNode && elems.phone.parentNode);
+        var re = /^[\w-\.]+@[\w-]+\.[a-z]{2,3}$/i;
+        if (!elems.email.value && !elems.phone.value) {
+            showError(elems.email.parentNode, ' Введите email.');
+            showError(elems.phone.parentNode, ' Введите номер телефона.');
+        } else if (!elems.email.value && elems.phone.value != '') {
+            resetError(elems.email.parentNode);
+        } else if (!re.test(elems.email.value)) {
+            showError(elems.email.parentNode, ' Введенный email некорректный.');
+        }
+
+
+        if ($('.buy-panel form div').hasClass('error')) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    // Form validation
+    function showError(container, errorMessage) {
+        container.className = 'error';
+        var msgElem = document.createElement('span');
+        msgElem.className = "error-message";
+        msgElem.innerHTML = errorMessage;
+        container.appendChild(msgElem);
+    }
+
+    function resetError(container) {
+        container.className = '';
+        if (container.lastChild.className == "error-message") {
+            container.removeChild(container.lastChild);
+        }
+    }
+    // Form validation
+
+    (function() {
+        // Input focus
+        $('.buy-panel form input').on('focus', function() {
+            if ($('.buy-panel form div').hasClass('error')) {
+                $('.buy-panel form div').removeClass('error');
+                $('.buy-panel form div .error-message').remove();
+            }
+        });
+        // Input focus
+
+        // Phone mask
+        $('[name="phone"]').inputmask({
+            "mask": "+7 (999)999-99-99"
+        });
+        // Phone mask
+
+        $('.button-buy').on('click', function() {
+            $('#reserve-lead').attr('action', '/module/tesla/apartment/lead');
+        });
+
+        $('.button-reserve').on('click', function() {
+            $('#reserve-lead').attr('action', '/module/tesla/apartment/reserve');
+            if ($(this).hasClass('remove-reserve')) {
+                $('#reserve-lead').attr('action', '/module/tesla/apartment/withdraw-reserve');
+            }
+        });
+
+        $(document).on('submit', '#reserve-lead', function(e) {
+            e.preventDefault();
+            FormPanel.Validate(this);
+
+            var form = $(this);
+            var action = form.attr('action');
+            var method = form.attr('method');
+            var data = new FormData(form[0]);
+
+            var floor = $('.select-floor').find('.floor').text();
+
+            if (FormPanel.Validate(this) == true) {
+                $('.buy-panel').addClass('status-success');
+                $.ajax({
+                    url: action,
+                    type: method,
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+
+                    success: function(data) {
+                        var response = $.parseJSON(data);
+
+                        if (response['status'] == 'fail') {
+                            document.getElementById('reserve-lead').reset();
+                            $('.circle-loader').toggleClass('load-complete failed');
+                            $('.checkmark').toggle();
+                            $('.buy-panel').find('.error-msg').show();
+                            $('.buy-panel').find('.error-msg').text(response['message']);
+                            setTimeout(function() {
+                                $('body').removeClass('get-buy-panel');
+                            }, 2000);
+                            setTimeout(function() {
+                                $('.buy-panel').removeClass('status-success');
+                                $('.circle-loader').toggleClass('load-complete failed');
+                                $('.checkmark').toggle();
+                                $('.buy-panel').find('.error-msg').hide();
+                            }, 2200);
+                        } else if (response['status'] == 'success') {
+                            document.getElementById('reserve-lead').reset();
+                            $('.circle-loader').toggleClass('load-complete');
+                            $('.checkmark').toggle();
+                            setTimeout(function() {
+                                $('body').removeClass('get-buy-panel');
+                            }, 2000);
+                            setTimeout(function() {
+                                $('.buy-panel').removeClass('status-success');
+                                $('.circle-loader').toggleClass('load-complete');
+                                $('.checkmark').toggle();
+                            }, 2200);
+                            setTimeout(function() {
+                                Sidebar.UpdateSidebar();
+                                Apartment.LoadFloor(floor);
+                                $('.view-apartment.select-apartment').removeClass('select-apartment');
+                            }, 3000);
+                        }
+                    },
+
+                    error: function(e) {
+
+                    }
+                });
+            }
+        });
+    })();
+
+    FormPanel.Validate = Validate;
+    window.FormPanel = FormPanel;
+})(window);
+
+/***/ }),
+/* 8 */
 /***/ (function(module, exports) {
 
 // Замена img на SVG

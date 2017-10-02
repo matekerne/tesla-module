@@ -21,23 +21,28 @@
     function LoadFloor(floor) {
         if (floor >= 12) {
             $('body').addClass('floor-12');
-            whatFloor = '12';
+            var whatFloor = '12';
             $.ajax({
                 url: "/public/svg/apartments" + whatFloor + ".html",
                 success: function(data) {
                     $("#apartmentsLayout").html(data);
+                    //Req.GetApartments(floor);
                 }
             });
         } else {
             $('body').removeClass('floor-12');
-            whatFloor = '2';
+            var whatFloor = '2';
             $.ajax({
                 url: "/public/svg/apartments" + whatFloor + ".html",
                 success: function(data) {
                     $("#apartmentsLayout").html(data);
+
                 }
             });
         }
+
+        Req.GetApartments(floor);
+        $("#floorInfo #floorMapSchema .floor-schema").attr("src", "/../../public/image/flats/floor/walls" + whatFloor + ".png");
     }
 
     function Event(data) {
@@ -59,6 +64,13 @@
 
             $('.view-apartment').removeClass('select-apartment');
             $(this).addClass('select-apartment');
+
+            Reserve.ReserveFlat(status, flatId);
+
+            if ($('.buy-panel form div').hasClass('error')) {
+                $('.buy-panel form div').removeClass('error');
+                $('.buy-panel form div .error-message').remove();
+            }
 
             switch (flatStatus) {
                 case '3':
@@ -98,6 +110,14 @@
         });
 
     }
+
+    (function () {
+        // Появление названий улиц
+        setTimeout(function() {
+            $('.name-street').addClass('show-street');
+        }, 500);
+        // Появление названий улиц
+    })();
 
     Apartment.InitApartment = InitApartment;
     Apartment.LoadFloor = LoadFloor;

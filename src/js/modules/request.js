@@ -24,8 +24,9 @@
             success: function(data) {
 
                 Apartment.InitApartment(data);
+                Sidebar.SelectFlat();
                 Apartment.Event(data);
-                Topbar.init();
+                Topbar.CheckFloor(floor);
             },
 
             error: function(e) {
